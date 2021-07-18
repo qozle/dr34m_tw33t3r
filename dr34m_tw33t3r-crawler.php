@@ -56,12 +56,12 @@ class NetCrawlObserver extends CrawlObserver {
             if(count($this->internal_urls)){
                 $random_i = array_rand($this->internal_urls);
                 $random_url = $this->internal_urls[$random_i];
-                if($debug) echo "We pick: {$random_url}\n\n";
-                if($debug) echo "Making a sentence of two randomly selected sentences to feed to the AI.\n";
+                if($debug) echo "\nWe pick: {$random_url}\n\n";
+                if($debug) echo "\nMaking a sentence of two randomly selected sentences to feed to the AI.\n";
                 $sentence = pick_random_sentence($random_url);
-                if($debug) echo "We got:\n";
+                if($debug) echo "We got:\n\n";
                 if($debug) echo $sentence . "\n";
-                if($debug) echo "Feeding sentence to AI...\n";
+                if($debug) echo "\nFeeding sentence to AI...\n\n";
                 $ai_text_raw = json_decode(get_ai_text($sentence), true);
                 if($debug) echo "Removing our origial sentence from the result...\n";
                 $ai_text = str_replace($sentence, '', $ai_text_raw['output']);
@@ -94,9 +94,6 @@ class NetCrawlObserver extends CrawlObserver {
                 main();
             }
 
-        } catch (Throwable $e){
-            echo "There was an error =/.  It's ok, we can just try again!\n\n";
-            main();
         } finally {
             main();
         }

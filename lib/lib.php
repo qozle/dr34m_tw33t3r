@@ -6,7 +6,7 @@ require_once('dr34m_tw33t3r-crawler.php');
 use Spatie\Crawler\Crawler;
 use Spatie\Crawler\CrawlObservers\NetCrawlObserver;
 
-$split_regex = '/(?<!Mr.|Mrs.|Dr.|U.S.|U.S.A.|L.A.|l.a.|)(?<=[.?!;:])\s+/';
+$split_regex = '/(?<!Mr.|Mrs.|Dr.|U.S.|U.S.A.|L.A.|l.a.)(?<=[.?!;:])\s+/';
 
 function load_vocab(){
     //  Read each of the parts of speech files, make an array of each.
