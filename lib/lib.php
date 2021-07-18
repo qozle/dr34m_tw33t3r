@@ -6,6 +6,8 @@ require_once('dr34m_tw33t3r-crawler.php');
 use Spatie\Crawler\Crawler;
 use Spatie\Crawler\CrawlObservers\NetCrawlObserver;
 
+$split_regex = '/(?<!Mr.|Mrs.|Dr.|U.S.|U.S.A.|L.A.|l.a.|)(?<=[.?!;:])\s+/';
+
 function load_vocab(){
     //  Read each of the parts of speech files, make an array of each.
     $random_lists = [];
@@ -240,6 +242,7 @@ function get_random_link($query){
 
 function pick_random_sentence($link){
     global $debug;
+    global $split_regex;
     $html = file_get_html($link);
 
     $page = $html->find('p');
@@ -252,7 +255,7 @@ function pick_random_sentence($link){
         $p = trim($p);
         //  Totally had to google this, but hey now I know more about positive lookbehinds!
         //  /(?<!Mr.|Mrs.|Dr.)(?<=[.?!;:])\s+/
-        $p_arr = preg_split('/(?<!Mr.|Mrs.|Dr.|U.S.|U.S.A.)(?<=[.?!;:])\s+/', $p, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+        $p_arr = preg_split($split_regex, $p, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
         foreach($p_arr as $sentence){
             array_push($sentence_arr, $sentence);
         }
@@ -272,7 +275,8 @@ function pick_random_sentence($link){
 
 function format_paragraph($paragraph){
     global $debug;
-    $sentences = preg_split('/(?<!Mr.|Mrs.|Dr.)(?<=[.?!;:])\s+/', $paragraph, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+    global $split_regex;
+    $sentences = preg_split($split_regex, $paragraph, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
 
     $char_count = 0;
     $tweet = '';
@@ -287,7 +291,7 @@ function format_paragraph($paragraph){
             break;
         }
     }
-    if($debug) echo "Tweet is: {$tweet}";
+    if($debug) echo "\n\nTweet is: {$tweet}\n\n";
     return $tweet;
 }
 
@@ -400,10 +404,10 @@ function twitter_request($status, $method = null, $url = null){
     $api_method = is_null($method) ? 'POST' : $method;
 
     if($debug){
-        echo 'Status: ' . $status . "\n";
-        echo 'Method: ' . $api_method . "\n";
-        echo 'Url: ' . $api_url . "\n";
-        echo 'Auth: ' . $auth . "\n";
+        echo 'Status: ' . $status . "\n\n";
+        echo 'Method: ' . $api_method . "\n\n";
+        echo 'Url: ' . $api_url . "\n\n";
+        echo 'Auth: ' . $auth . "\n\n";
     }
     
     
