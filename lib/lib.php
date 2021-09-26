@@ -320,7 +320,7 @@ function pick_random_sentences($link){
 
 function get_ai_text($text){
     global $debug;
-    $headers = ['api-key:4fe904a0-f080-4745-814f-5874275dc1d6'];
+    $headers = [$ai_api];
     $curl = curl_init("https://api.deepai.org/api/text-generator"); 
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);  
         curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
@@ -391,7 +391,7 @@ function send_mail($tweet){
     // Create a message
     $message = (new Swift_Message('New tweet'))
     ->setFrom(['server@01014.org' => 'Dream Tweeter'])
-    ->setTo(['mf.qozle@gmail.com'])
+    ->setTo([$email])
     ->setBody($body, 'text/html');
 
     // Send the message
