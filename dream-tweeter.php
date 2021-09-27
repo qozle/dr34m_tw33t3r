@@ -5,8 +5,6 @@ require('lib/lib.php');
 $debug = true;
 
 
-
-
 function main(bool $sleep = false){
     global $debug;
     global $crawl_results;
