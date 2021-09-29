@@ -211,7 +211,6 @@ function search($text){
     } else {
         if($debug) {
             "Got {$respCode} from google search:\n\n";
-            echo var_dump($json);
         } 
         return false;
     }
@@ -230,7 +229,7 @@ function get_random_link($sentence){
         }
     } else if($search_limit < 10) {
         $search_limit++;
-        return get_random_link();
+        return get_random_link($sentence);
     } else {
         return false;
     }    
@@ -320,6 +319,7 @@ function pick_random_sentences($link){
 
 function get_ai_text($text){
     global $debug;
+    global $ai_api;
     $headers = [$ai_api];
     $curl = curl_init("https://api.deepai.org/api/text-generator"); 
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);  
@@ -349,17 +349,19 @@ function format_paragraph($paragraph){
 
     $char_count = 0;
     $tweet = '';
-    foreach($sentences as $k=>$sentence){
+    for($i = count($sentences) -1; $i >= 0; $i--){
+        $sentence = $sentences[$i];
+        $sentence = trim($sentence);
         $len = strlen($sentence);
-        if ($char_count + $len <= 280){
+        if($len > 280){
+            array_splice($sentences, $i, 1);
+            continue;
+        } else if($char_count + $len <= 280) {
+            $char_count === 0 ? $tweet .= $sentence : $tweet .= "  " . $sentence;
             $char_count += $len;
-            array_key_first($sentences) != $k ? 
-                $tweet .= "  " . $sentence : 
-                $tweet .= $sentence;
-        } else {
-            break;
         }
-    }   
+    }
+
     //  replace any new lines with two spaces
     $tweet = preg_replace('/(\n|\r|\r\n)/', '  ', $tweet);
     return $tweet;
@@ -370,6 +372,7 @@ function send_mail($tweet){
     global $smtpUser;
     global $smtpPassword;
     global $secure_password;
+    global $email;
     $sendmail_path = ini_get('sendmail_path');
 
     // Create the Transport

@@ -24,6 +24,7 @@ function main(bool $sleep = false){
         
         ##  Do a google search, pick a random result
         $random_link = get_random_link($sentence);
+        if($random_link == false) $random_link = 'false';
         if($debug) echo "RANDOM LINK: " . $random_link . "\n\n";
         
         ##  Crawl the site
@@ -35,7 +36,7 @@ function main(bool $sleep = false){
             do{
                 $sentence = build_sentence();
                 $random_link = get_random_link($sentence);
-            } while (empty($random_link));
+            } while (empty($random_link) || $random_link == false);
             echo "Crawling a new random link ({$random_link})\n\n";
             crawl($random_link);
         }
