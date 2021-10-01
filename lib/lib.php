@@ -179,12 +179,12 @@ function build_sentence($seed = null, $question = false){
 
     }
 
-    return $random_sentence;
-    
+    return $random_sentence;   
 }
 
 
-//  Do a google search
+//  Do a google search for some text, return an array of links of the results
+//  or false is we didn't get a good resp code.
 function search($text){
     global $debug;
     global $api_key;
@@ -209,9 +209,7 @@ function search($text){
         }
         return $links;
     } else {
-        if($debug) {
-            "Got {$respCode} from google search:\n\n";
-        } 
+        if($debug) echo "Got {$respCode} from google search =/.\n\n"; 
         return false;
     }
 }
@@ -219,31 +217,25 @@ function search($text){
 
 //  Build a sentence, do a search, pick a result, try up to 10 times recursively.
 function get_random_link($sentence){
-    static $search_limit = 0;
     $search_results = search($sentence);
-    if($search_results && count($search_results)){
-        $random_link = $search_results[array_rand($search_results)];
-        if(!preg_match('/\.(pdf|jpg|jpeg|gif|doc)$/', $random_link)){
-            $search_limit = 0;
-            return $random_link;
+    if($search_results){
+        for($i = count($search_results) - 1; $i >=0; $i--){
+            if(preg_match('/\.(pdf|jpg|jpeg|gif|doc)$/', $search_results)){
+                array_splice($search_results, array_search($random_link), 1);
+            }
         }
-    } else if($search_limit < 10) {
-        $search_limit++;
-        return get_random_link($sentence);
-    } else {
-        return false;
-    }    
+        //  if we still have results left, pick a random one.
+        if(count($search_results)) return $search_results[array_rand($search_results)];
+        else return false;
+    } else return false;   
 }
 
 
-
 function crawl($url){
-    $netCrawlObserver = new NetCrawlObserver();
-    
-    //  Crawl the site, build a list of all internal URLs, pick a random one.
+    $netCrawlObserver = new NetCrawlObserver();    
+    //  Crawl the site, build a list of all URLs.
     return Crawler::create()
     ->setCrawlObserver($netCrawlObserver)
-    ->setCrawlProfile(new \Spatie\Crawler\CrawlProfiles\CrawlInternalUrls($url))
     ->setTotalCrawlLimit(100)
     ->startCrawling($url);
 }
@@ -252,8 +244,7 @@ function crawl($url){
 //  Pick two random sentences from a URL
 function pick_random_sentences($link){
     global $debug;
-    //  get the html of the link
-   
+
     //  It's more reliable to get the html ourselves.
     $curl = curl_init($link);  
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);  
@@ -274,6 +265,7 @@ function pick_random_sentences($link){
             return false;
         } 
     } else {
+        echo "Bad response ({$respCode}) from random link ({$link}).";
         return false;
     }
     
@@ -297,7 +289,6 @@ function pick_random_sentences($link){
             $sentence = preg_replace('/(\n|\r|\r\n)/', '  ', $sentence);
             array_push($sentence_arr, $sentence);
         }
-        unset($sentence);
     }
     if(count($sentence_arr)){
         //  Pick two random sentences, remove the first one so we don't get doubles.
@@ -337,7 +328,7 @@ function get_ai_text($text){
         $ai_text = str_replace($text, '', $json['output']);
         return $ai_text;
     } else {
-        if($debug) echo "\\nWe got an error when trying to get the AI text: {$respCode}\n\n";
+        if($debug) echo "\nGot a bad response from the DeepAI API: {$respCode}\n\n";
         return false;
     }
 }
@@ -346,25 +337,32 @@ function get_ai_text($text){
 function format_paragraph($paragraph){
     global $debug;
     $sentences = preg_split(SENTENCE_REGEX, $paragraph, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
-
     $char_count = 0;
     $tweet = '';
+
+    //  loop backwards first and remove everything that's too big to use anyway.
     for($i = count($sentences) -1; $i >= 0; $i--){
-        $sentence = $sentences[$i];
-        $sentence = trim($sentence);
-        $len = strlen($sentence);
+        $len = strlen($sentence[$i]);
         if($len > 280){
             array_splice($sentences, $i, 1);
             continue;
-        } else if($char_count + $len <= 280) {
+        }
+    }
+
+    //  loop forwards now because we want to make sense, sentences need
+    //  to come in chronological order.
+    foreach($sentences as $sentence){
+        if($char_count + $len <= 280){
+            $sentence = trim($sentence);
             $char_count === 0 ? $tweet .= $sentence : $tweet .= "  " . $sentence;
             $char_count += $len;
-        }
+        } else break;
     }
 
     //  replace any new lines with two spaces
     $tweet = preg_replace('/(\n|\r|\r\n)/', '  ', $tweet);
-    return $tweet;
+    if(preg_replace('/\s+/', '', $tweet) == '') return false;
+    else return $tweet;
 }
 
 

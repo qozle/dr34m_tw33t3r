@@ -13,9 +13,6 @@ if(!isset($_GET['tweet']) || !isset($_GET['sec'])){
 }
 
 
-
-
-
 if(password_verify($secure_password, $pw)){
     $resp = twitter_request($tweet);
     if($resp['code'] == 200){
