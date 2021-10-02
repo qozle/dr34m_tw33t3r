@@ -4,12 +4,11 @@ namespace Spatie\Crawler\CrawlObservers;
 use GuzzleHttp\Exception\RequestException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\UriInterface;
-
+use \crawl_results;
 
 class NetCrawlObserver extends CrawlObserver {
     function __construct(){
         $this->internal_urls = [];
-        $this->select_limit = 0;
     }
 
 

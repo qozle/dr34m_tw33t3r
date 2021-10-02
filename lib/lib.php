@@ -7,10 +7,9 @@ use Spatie\Crawler\Crawler;
 use Spatie\Crawler\CrawlObservers\NetCrawlObserver;
 
 //  "constants"
-define("SENTENCE_REGEX",  '/(?<!Mr.|Mrs.|Dr.|U.S.|U.S.A.|L.A.|l.a.)(?<=[.?!;:])\s{1,2}/');
+define("SENTENCE_REGEX",  '/(?<!Mr.|Mrs.|Dr.|U.S.|U.S.A.|L.A.|l.a.|St.|M.D.)(?<=[.?!])\s{1,2}/i');
 define("SPACE",           " ");
 define("POS_ARR",         ['art', 'adj', 'adv', 'noun', 'prep', 'verb']);
-$crawl_results;
 
 
 ##  Load vocab files
@@ -220,8 +219,8 @@ function get_random_link($sentence){
     $search_results = search($sentence);
     if($search_results){
         for($i = count($search_results) - 1; $i >=0; $i--){
-            if(preg_match('/\.(pdf|jpg|jpeg|gif|doc)$/', $search_results)){
-                array_splice($search_results, array_search($random_link), 1);
+            if(preg_match('/\.(pdf|jpg|jpeg|gif|doc)$/', $search_results[$i])){
+                array_splice($search_results, $i, 1);
             }
         }
         //  if we still have results left, pick a random one.
@@ -234,10 +233,14 @@ function get_random_link($sentence){
 function crawl($url){
     $netCrawlObserver = new NetCrawlObserver();    
     //  Crawl the site, build a list of all URLs.
-    return Crawler::create()
+ 
+    Crawler::create()
     ->setCrawlObserver($netCrawlObserver)
     ->setTotalCrawlLimit(100)
+    ->setCrawlProfile(new \Spatie\Crawler\CrawlProfiles\CrawlAllUrls($url)) 
     ->startCrawling($url);
+  
+
 }
 
 
@@ -261,11 +264,11 @@ function pick_random_sentences($link){
         $html = str_get_html($resp);
         if(!$html){
             $html_bool = $html ? 'true' : 'false';
-            echo "\$html evaluated to a bool ({$html_bool})\n";
+            echo "\$html evaluated to a bool ({$html_bool})\n\n";
             return false;
         } 
     } else {
-        echo "Bad response ({$respCode}) from random link ({$link}).";
+        echo "Bad response ({$respCode}) from random link ({$link}).\n\n";
         return false;
     }
     
@@ -301,9 +304,7 @@ function pick_random_sentences($link){
         if($debug) echo "\nSentence 2: {$sentence2} \n\n";
         $sentence = $sentence1 . ' ' . $sentence2;
         return $sentence;
-    } else {
-        return false;
-    }
+    } else return false;
 }
 
 
@@ -340,27 +341,62 @@ function format_paragraph($paragraph){
     $char_count = 0;
     $tweet = '';
 
-    //  loop backwards first and remove everything that's too big to use anyway.
     for($i = count($sentences) -1; $i >= 0; $i--){
-        $len = strlen($sentence[$i]);
+        $sentence =& $sentences[$i];
+        $sentence = trim($sentence);
+        //  commence some pretty serious formating shenanigans.
+
+        //  filter out sentences that are bigger than tweet threshold
+        $len = strlen($sentence);
         if($len > 280){
             array_splice($sentences, $i, 1);
             continue;
         }
+
+        //  If it doesn't start with certain normal sentence beginner characters, trash it.
+        if(!preg_match('/[a-z0-9"\']/i', $sentence[0])){
+            array_splice($sentences, $i, 1);
+            continue;
+        }
+
+        //  replace any new lines with sentence endings.
+        if(preg_match('/(\n|\r|\r\n)/', $sentence)){
+            if($sentence[-1] == '.') $sentence = preg_replace('/(\n|\r|\r\n)/', '  ', $sentence); 
+            else $sentence = preg_replace('/(\n|\r|\r\n)/', '.  ', $sentence); 
+        }
+        
+        //  remove any extra spaces
+        $sentence = preg_replace('/\s{3,}/', ' ', $sentence);
+
+
+        //  if the first character is a lowercase, make it uppercase
+        if($sentence[0] == strtolower($sentence[0])){
+            $sentence[0] = strtoupper($sentence[0]);
+        }
+
+        //  if the sentence starts with " or ', make sure it ends with " or ' as well.
+        if($sentence[0] == "'" && $sentence[-1] != "'") $sentence .= "'"; 
+        else if ($sentence[0] == '"' && $sentence[-1] != '"') $sentence .= '"';
     }
 
-    //  loop forwards now because we want to make sense, sentences need
-    //  to come in chronological order.
+
+    if($debug) echo var_dump($sentences) . "\n\n";
+    unset($len);
+    unset($sentence);
+    unset($sentences[0]);  //  trash the first one.  sometimes it sucks and its hard to parse.
+
+    //  loop forwards now because we want to make sense, sentences need to come in chronological order.
     foreach($sentences as $sentence){
+        $len = strlen($sentence);
         if($char_count + $len <= 280){
             $sentence = trim($sentence);
             $char_count === 0 ? $tweet .= $sentence : $tweet .= "  " . $sentence;
             $char_count += $len;
-        } else break;
+        } else continue;
     }
 
     //  replace any new lines with two spaces
-    $tweet = preg_replace('/(\n|\r|\r\n)/', '  ', $tweet);
+    // $tweet = preg_replace('/(\n|\r|\r\n)/', '.  ', $tweet);
     if(preg_replace('/\s+/', '', $tweet) == '') return false;
     else return $tweet;
 }
