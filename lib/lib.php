@@ -388,11 +388,17 @@ function format_paragraph($paragraph){
     //  loop forwards now because we want to make sense, sentences need to come in chronological order.
     foreach($sentences as $sentence){
         $len = strlen($sentence);
-        if($char_count + $len <= 280){
-            $sentence = trim($sentence);
-            $char_count === 0 ? $tweet .= $sentence : $tweet .= "  " . $sentence;
-            $char_count += $len;
-        } else continue;
+        if($char_count === 0){
+            if($char_count + $len <= 280){
+                $tweet .= $sentence;
+                $char_count += $len;
+            } 
+        } else {
+            if($char_count + $len + 2 <= 280){
+                $tweet .= " " . $sentence;
+                $char_count += $len + 2;
+            }
+        }
     }
 
     //  replace any new lines with two spaces
