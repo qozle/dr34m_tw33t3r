@@ -107,7 +107,8 @@ function main(){
             return;
         }
     } catch(Throwable $e){
-        echo $e->getMessage() . "in line " . $e->getLine . " in file " . $e->getfile .  "\n\n";
+        echo $e->getMessage() . "in line " . $e->getLine() . " in file " . $e->getFile() .  "\n\n";
+        $e->getTrace();
         echo "There was an error, trying again...\n\n";
         return;
     }

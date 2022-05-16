@@ -1,7 +1,7 @@
 <?PHP
 require_once('simple_html_dom.php');
 require_once('creds.php');
-require_once('dr34m_tw33t3r-crawler.php');
+require_once('dream_tweeter-crawler.php');
 
 use Spatie\Crawler\Crawler;
 use Spatie\Crawler\CrawlObservers\NetCrawlObserver;
@@ -428,7 +428,7 @@ function send_mail($tweet){
     $body = "
     {$tweet}
 
-    <a href='https://dev.01014.org/dr34m_tw33t3r/send_tweet.php?{$params}'>Approve</a>
+    <a href='https://01014.org/dream_tweeter/send_tweet.php?{$params}'>Approve</a>
     ";
 
     // Create a message

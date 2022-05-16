@@ -1,6 +1,7 @@
 <?PHP
-require('creds.php');
-require('lib/tweet_lib.php');
+require('/home/qozle/dream_tweeter/creds.php');
+require('/home/qozle/dream_tweeter/lib/tweet_lib.php');
+require('/home/qozle/dream_tweeter/vendor/autoload.php');
 
 
 
